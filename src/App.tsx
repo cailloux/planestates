@@ -3,8 +3,30 @@ import type { AirportDataset, FlightVisit } from "../shared/types";
 import { parseLogbookCsv } from "./lib/csv/parsers";
 import { computeCompletion, type StateProgress } from "./lib/completion";
 import AirportRing from "./components/AirportRing";
+import AdminPage from "./components/AdminPage";
+import OAuthCallback from "./components/OAuthCallback";
 
 export default function App() {
+  if (window.location.pathname === "/oauth/callback") {
+    return <OAuthCallback />;
+  }
+  if (window.location.pathname === "/admin") {
+    return (
+      <div className="app">
+        <header className="masthead">
+          <h1>
+            Plane <span className="accent">States</span>
+          </h1>
+          <span className="legend">Admin</span>
+        </header>
+        <AdminPage />
+      </div>
+    );
+  }
+  return <MainApp />;
+}
+
+function MainApp() {
   const [dataset, setDataset] = useState<AirportDataset | null>(null);
   const [datasetError, setDatasetError] = useState<string | null>(null);
   const [flights, setFlights] = useState<FlightVisit[]>([]);

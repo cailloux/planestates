@@ -27,15 +27,20 @@
     }
   ],
   "vars": {
-    // MyFlightBook OAuth (public values only — the client SECRET is set via:
-    //   wrangler secret put MFB_CLIENT_SECRET
+    // MyFlightBook OAuth — PKCE public client, so there is no secret at all.
     "MFB_CLIENT_ID": "planestates",
     "MFB_OAUTH_BASE": "https://myflightbook.com/logbook/mvc/oauth",
     // FAA NASR segmented-CSV download base. Verify pattern on first run.
-    "NASR_BASE_URL": "https://nfdc.faa.gov/webContent/28DaySub/extra"
+    "NASR_BASE_URL": "https://nfdc.faa.gov/webContent/28DaySub/extra",
+    // Cloudflare Access protection for /api/admin/* — from the Zero Trust
+    // dashboard after creating the Access application. Admin fails closed
+    // until both are set.
+    "ACCESS_TEAM_DOMAIN": "TODO.cloudflareaccess.com",
+    "ACCESS_AUD": "TODO"
   }
   // ROADMAP (not yet configured):
   // - send_email binding (Email Routing) for staleness alerts
-  // - Cloudflare Access policy protecting /api/admin/* (configure in dashboard;
-  //   the route already verifies the Cf-Access-Jwt-Assertion header exists)
+  // Note: /api/admin/* now fully verifies the Access JWT signature in
+  // worker/access.ts; it fails closed until the ACCESS_* vars above are set
+  // and the Access application exists in the Zero Trust dashboard.
 }

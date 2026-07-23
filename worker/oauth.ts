@@ -1,23 +1,15 @@
 /**
- * MyFlightBook OAuth2 token exchange.
+ * MyFlightBook OAuth2 token exchange — PKCE public client.
  *
- * This is the only reason Plane States has a backend at all: the authorization-
- * code exchange requires the client secret, which must not ship in browser JS.
- * The Worker exchanges the code and hands the access token straight back to
- * the browser. Nothing is stored server-side — the token lives only in the
- * user's session, and flight data is fetched client-side.
- *
- * Flow (standard authorization code):
- *   1. UI sends the user to {MFB_OAUTH_BASE}/authorize?... (client id, redirect,
- *      scope, state) — built client-side, no secret needed.
- *   2. MyFlightBook redirects back to /oauth/callback?code=...
- *   3. UI POSTs the code to /api/oauth/token (this handler).
- *   4. Handler exchanges code+secret for a token and returns it to the browser.
+ * With PKCE there is no client secret: the browser generates a one-time
+ * code_verifier and proves possession of it at exchange time. This endpoint
+ * exists only as CORS insurance — if MyFlightBook's token endpoint allowed
+ * browser calls directly, we wouldn't need it at all. It forwards the
+ * exchange verbatim and stores nothing. Plane States holds zero secrets.
  */
 
 export interface OAuthEnv {
   MFB_CLIENT_ID: string;
-  MFB_CLIENT_SECRET: string; // wrangler secret put MFB_CLIENT_SECRET
   MFB_OAUTH_BASE: string;
 }
 
@@ -25,18 +17,18 @@ export async function handleTokenExchange(request: Request, env: OAuthEnv): Prom
   if (request.method !== "POST") {
     return json({ error: "method_not_allowed" }, 405);
   }
-  if (!env.MFB_CLIENT_SECRET || env.MFB_CLIENT_ID === "TODO") {
-    return json({ error: "not_configured", detail: "MyFlightBook credentials not set" }, 503);
+  if (!env.MFB_CLIENT_ID || env.MFB_CLIENT_ID === "TODO") {
+    return json({ error: "not_configured", detail: "MFB_CLIENT_ID not set" }, 503);
   }
 
-  let body: { code?: string; redirectUri?: string };
+  let body: { code?: string; redirectUri?: string; codeVerifier?: string };
   try {
     body = await request.json();
   } catch {
     return json({ error: "bad_request" }, 400);
   }
-  if (!body.code || !body.redirectUri) {
-    return json({ error: "bad_request", detail: "code and redirectUri required" }, 400);
+  if (!body.code || !body.redirectUri || !body.codeVerifier) {
+    return json({ error: "bad_request", detail: "code, redirectUri, codeVerifier required" }, 400);
   }
 
   const tokenRes = await fetch(`${env.MFB_OAUTH_BASE}/OAuthToken`, {
@@ -46,14 +38,12 @@ export async function handleTokenExchange(request: Request, env: OAuthEnv): Prom
       grant_type: "authorization_code",
       code: body.code,
       client_id: env.MFB_CLIENT_ID,
-      client_secret: env.MFB_CLIENT_SECRET,
       redirect_uri: body.redirectUri,
+      code_verifier: body.codeVerifier,
     }),
   });
 
   const payload = await tokenRes.text();
-  // Pass MyFlightBook's response through verbatim (token or error) — we don't
-  // inspect or retain it.
   return new Response(payload, {
     status: tokenRes.status,
     headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },

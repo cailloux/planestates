@@ -1,7 +1,8 @@
 import { runExtract, currentCycleDate, isoDate, DATASET_KEY, type NasrEnv } from "./nasr";
 import { handleTokenExchange, type OAuthEnv } from "./oauth";
+import { verifyAccessJwt, type AccessEnv } from "./access";
 
-export interface Env extends NasrEnv, OAuthEnv {
+export interface Env extends NasrEnv, OAuthEnv, AccessEnv {
   ASSETS: Fetcher;
 }
 
@@ -65,18 +66,19 @@ async function serveAirports(env: Env): Promise<Response> {
 }
 
 /**
- * Admin endpoints (placeholder — see ROADMAP).
+ * Admin endpoints.
  *
- * Security model: this route is intended to sit behind a Cloudflare Access
- * policy (configure in Zero Trust dashboard for path /api/admin/*). As a
- * belt-and-suspenders check, we refuse requests missing the Access JWT header
- * that Cloudflare injects after authenticating a user. Full JWT signature
- * validation is a roadmap item; do not rely on this check alone until the
- * Access policy exists.
+ * Two layers of protection:
+ *  1. A Cloudflare Access policy on /api/admin/* (Zero Trust dashboard) — this
+ *     is what actually gates browser access with SSO.
+ *  2. Signature verification of the Access JWT here (worker/access.ts), so a
+ *     forged header or a request that somehow bypasses Access still fails.
+ * Fails closed when ACCESS_TEAM_DOMAIN / ACCESS_AUD are unset.
  */
 async function handleAdmin(request: Request, env: Env, url: URL): Promise<Response> {
-  if (!request.headers.get("Cf-Access-Jwt-Assertion")) {
-    return json({ error: "forbidden", detail: "Cloudflare Access required" }, 403);
+  const access = await verifyAccessJwt(request, env);
+  if (!access.ok) {
+    return json({ error: "forbidden", detail: access.reason }, 403);
   }
 
   if (url.pathname === "/api/admin/extract" && request.method === "POST") {
