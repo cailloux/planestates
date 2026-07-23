@@ -45,8 +45,8 @@
     // Staleness alerting. ALERT_FROM must be on a domain with Email Routing
     // enabled in this account; ALERT_TO must be a verified destination
     // address in Email Routing. Alerts are skipped (and logged) until set.
-    "ALERT_FROM": "alerts@planestates.com",
-    "ALERT_TO": "TODO-your-verified-address",
+    "ALERT_FROM": "alerts@planestates.org",
+    "ALERT_TO": "tim@cailloux.com",
     "ALERT_GRACE_DAYS": "3",
     "ACCESS_AUD": "e955a1450923b2a5fa861c526fd60c2404b232de720c036e6df7a3c8769db135"
   }
