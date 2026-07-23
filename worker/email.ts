@@ -1,4 +1,8 @@
-import { EmailMessage } from "cloudflare:email";
+// Type-only import (erased at runtime). The runtime module is loaded lazily
+// inside sendEmail() so that environments lacking the send_email binding
+// (e.g. version previews) can still instantiate the Worker — a top-level
+// import makes email a startup dependency, which alerting should never be.
+import type { EmailMessage as EmailMessageType } from "cloudflare:email";
 
 /**
  * Staleness alerting via Cloudflare Email Routing's send_email binding.
@@ -17,7 +21,7 @@ import { EmailMessage } from "cloudflare:email";
  */
 
 export interface EmailEnv {
-  EMAIL?: { send(message: EmailMessage): Promise<void> };
+  EMAIL?: { send(message: EmailMessageType): Promise<void> };
   ALERT_FROM?: string;
   ALERT_TO?: string;
   ALERT_GRACE_DAYS?: string;
@@ -45,6 +49,7 @@ export async function sendEmail(env: EmailEnv, subject: string, body: string): P
     ``,
     body,
   ].join("\r\n");
+  const { EmailMessage } = await import("cloudflare:email");
   await env.EMAIL!.send(new EmailMessage(env.ALERT_FROM!, env.ALERT_TO!, raw));
 }
 
