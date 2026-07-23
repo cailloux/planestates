@@ -1,5 +1,5 @@
 import { runExtract, currentCycleDate, isoDate, DATASET_KEY, type NasrEnv } from "./nasr";
-import { handleTokenExchange, type OAuthEnv } from "./oauth";
+import { handleTokenExchange, handleVisitedProxy, type OAuthEnv } from "./oauth";
 import { verifyAccessJwt, type AccessEnv } from "./access";
 
 export interface Env extends NasrEnv, OAuthEnv, AccessEnv {
@@ -15,6 +15,13 @@ export default {
     }
     if (url.pathname === "/api/oauth/token") {
       return handleTokenExchange(request, env);
+    }
+    if (url.pathname === "/api/mfb/visited") {
+      return handleVisitedProxy(request, env);
+    }
+    if (url.pathname === "/api/config") {
+      // Public client config for the SPA — nothing here is sensitive.
+      return json({ clientId: env.MFB_CLIENT_ID, oauthBase: env.MFB_OAUTH_BASE });
     }
     if (url.pathname.startsWith("/api/admin/")) {
       return handleAdmin(request, env, url);

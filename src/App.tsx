@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { AirportDataset, FlightVisit } from "../shared/types";
 import { parseLogbookCsv } from "./lib/csv/parsers";
 import { computeCompletion, type StateProgress } from "./lib/completion";
+import { beginAuth, clearToken, fetchVisitedAirports, getStoredToken } from "./lib/myflightbook";
 import AirportRing from "./components/AirportRing";
 import AdminPage from "./components/AdminPage";
 import OAuthCallback from "./components/OAuthCallback";
@@ -32,7 +33,40 @@ function MainApp() {
   const [flights, setFlights] = useState<FlightVisit[]>([]);
   const [uploadNote, setUploadNote] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
+  const [mfbConnected, setMfbConnected] = useState(!!getStoredToken());
+  const [mfbNote, setMfbNote] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const token = getStoredToken();
+    if (!token) return;
+    fetchVisitedAirports(token)
+      .then((visits) => {
+        setFlights((prev) => [...prev.filter((f) => f.source !== "myflightbook"), ...visits]);
+        setMfbNote(`Loaded ${visits.length} visited airports from MyFlightBook.`);
+      })
+      .catch((err: Error) => {
+        setMfbConnected(!!getStoredToken());
+        setMfbNote(err.message);
+      });
+  }, []);
+
+  async function connectMfb() {
+    try {
+      const res = await fetch("/api/config");
+      const cfg = (await res.json()) as { clientId: string; oauthBase: string };
+      window.location.href = await beginAuth(cfg.clientId, cfg.oauthBase);
+    } catch {
+      setMfbNote("Couldn't start MyFlightBook sign-in — try again.");
+    }
+  }
+
+  function disconnectMfb() {
+    clearToken();
+    setMfbConnected(false);
+    setFlights((prev) => prev.filter((f) => f.source !== "myflightbook"));
+    setMfbNote("Disconnected. MyFlightBook data removed.");
+  }
 
   useEffect(() => {
     fetch("/api/airports")
@@ -99,12 +133,19 @@ function MainApp() {
             hidden
             onChange={(e) => onFiles(e.target.files)}
           />
-          <button className="btn" disabled title="Coming soon — pending MyFlightBook API credentials">
-            Connect MyFlightBook
-          </button>
+          {mfbConnected ? (
+            <button className="btn" onClick={disconnectMfb}>
+              Disconnect MyFlightBook
+            </button>
+          ) : (
+            <button className="btn" onClick={connectMfb}>
+              Connect MyFlightBook
+            </button>
+          )}
           <span className="hint">ForeFlight and Garmin Pilot exports, auto-detected.</span>
         </div>
         {uploadNote && <p className="notice ok">{uploadNote}</p>}
+        {mfbNote && <p className="hint">{mfbNote}</p>}
         {datasetError && <p className="notice">{datasetError}</p>}
         {completion && (
           <p className="hint">

@@ -50,6 +50,26 @@ export async function handleTokenExchange(request: Request, env: OAuthEnv): Prom
   });
 }
 
+/**
+ * Stateless proxy for the VisitedAirports resource call. Exists only because
+ * MyFlightBook's resource endpoints don't send CORS headers for browser
+ * calls. The user's bearer token is forwarded and never stored; the response
+ * passes through verbatim.
+ */
+export async function handleVisitedProxy(request: Request, env: OAuthEnv): Promise<Response> {
+  const auth = request.headers.get("Authorization");
+  if (!auth?.startsWith("Bearer ")) {
+    return json({ error: "unauthorized", detail: "Bearer token required" }, 401);
+  }
+  const res = await fetch(`${env.MFB_OAUTH_BASE}/OAuthResource/VisitedAirports?json=1`, {
+    headers: { Authorization: auth },
+  });
+  return new Response(res.body, {
+    status: res.status,
+    headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+  });
+}
+
 function json(obj: unknown, status = 200): Response {
   return new Response(JSON.stringify(obj), {
     status,

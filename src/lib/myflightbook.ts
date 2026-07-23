@@ -46,7 +46,7 @@ export async function beginAuth(clientId: string, oauthBase: string): Promise<st
     code_challenge: challenge,
     code_challenge_method: "S256",
   });
-  return `${oauthBase}/Authorize?${params}`;
+  return `${oauthBase}/AuthorizePKCE?${params}`;
 }
 
 /** Handle /oauth/callback: validate state, exchange code via the Worker. */
@@ -84,9 +84,33 @@ function b64u(bytes: Uint8Array): string {
     .replace(/=+$/, "");
 }
 
-export async function fetchVisitedAirports(_token: string): Promise<FlightVisit[]> {
-  // TODO: call MyFlightBook's VisitedAirports service with the token and map
-  // each returned airport code into a FlightVisit-shaped record. Verify the
-  // exact endpoint + response shape in the MFB testbed before wiring up.
-  throw new Error("MyFlightBook fetch not implemented yet — use CSV upload for now");
+interface MfbVisitedAirport {
+  Code?: string;
+  Aliases?: string;
+  NumberOfVisits?: number;
+  LatestVisitDate?: string;
+}
+
+/** Fetch visited airports via the Worker proxy (CORS insurance; stateless). */
+export async function fetchVisitedAirports(token: string): Promise<FlightVisit[]> {
+  const res = await fetch("/api/mfb/visited", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (res.status === 401 || res.status === 403) {
+    clearToken();
+    throw new Error("MyFlightBook session expired — please reconnect");
+  }
+  if (!res.ok) throw new Error(`MyFlightBook fetch failed (${res.status})`);
+  const visited = (await res.json()) as MfbVisitedAirport[];
+  if (!Array.isArray(visited)) throw new Error("Unexpected MyFlightBook response shape");
+
+  return visited
+    .map((v): FlightVisit | null => {
+      const idents = [v.Code, ...(v.Aliases?.split(",") ?? [])]
+        .map((c) => c?.trim().toUpperCase())
+        .filter((c): c is string => !!c && /^[A-Z0-9]{3,4}$/.test(c));
+      if (idents.length === 0) return null;
+      return { date: v.LatestVisitDate ?? "", idents, source: "myflightbook" };
+    })
+    .filter((v): v is FlightVisit => v !== null);
 }
