@@ -15,14 +15,14 @@
     "fflate": "^0.8.2",
     "papaparse": "^5.4.1",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^19.2.8"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.47.0",
     "@cloudflare/workers-types": "^5.0.0",
     "@types/papaparse": "^5.3.14",
     "@types/react": "^18.3.3",
-    "@types/react-dom": "^18.3.0",
+    "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^4.3.1",
     "typescript": "^7.0.2",
     "vite": "^6.0.0",
