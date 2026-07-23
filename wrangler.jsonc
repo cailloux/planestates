@@ -23,8 +23,7 @@
   },
   "send_email": [
     {
-      "name": "EMAIL",
-      "remote": true
+      "name": "EMAIL"
     }
   ],
   "analytics_engine_datasets": [
