@@ -52,21 +52,23 @@ export async function renderShareCard(sp: StateProgress): Promise<Blob> {
 
   // Stats, right
   const name = STATE_NAMES[sp.state] ?? sp.state;
+  const COL_X = 560;
+  const COL_W = 600; // column start to inner border
   ctx.fillStyle = INK_C;
   ctx.font = '700 100px "B612"';
-  ctx.fillText(sp.state, 560, 230);
-  ctx.font = '400 40px "B612 Mono"';
-  ctx.fillText(name.toUpperCase(), 560, 290);
+  ctx.fillText(sp.state, COL_X, 230);
+  fitFont(ctx, name.toUpperCase(), 40, (n) => `400 ${n}px "B612 Mono"`, COL_W);
+  ctx.fillText(name.toUpperCase(), COL_X, 290);
 
   ctx.fillStyle = MAGENTA;
-  ctx.font = '700 64px "B612"';
-  ctx.fillText(
-    sp.pct === 1 ? "STATE COMPLETE" : `${Math.round(sp.pct * 100)}% COMPLETE`,
-    560, 390,
-  );
+  const headline = sp.pct === 1 ? "STATE COMPLETE" : `${Math.round(sp.pct * 100)}% COMPLETE`;
+  fitFont(ctx, headline, 64, (n) => `700 ${n}px "B612"`, COL_W);
+  ctx.fillText(headline, COL_X, 390);
+
   ctx.fillStyle = INK_C;
-  ctx.font = '400 36px "B612 Mono"';
-  ctx.fillText(`${sp.visited.length} of ${sp.total} public-use airports`, 560, 450);
+  const stats = `${sp.visited.length} of ${sp.total} public-use airports`;
+  fitFont(ctx, stats, 36, (n) => `400 ${n}px "B612 Mono"`, COL_W);
+  ctx.fillText(stats, COL_X, 450);
 
   // Pixel compass + wordmark, bottom
   const px = 7;
@@ -101,6 +103,22 @@ export async function shareCard(sp: StateProgress): Promise<"shared" | "download
   a.click();
   URL.revokeObjectURL(a.href);
   return "downloaded";
+}
+
+/** Set ctx.font at the largest size <= base where text fits maxWidth. */
+function fitFont(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  base: number,
+  font: (size: number) => string,
+  maxWidth: number,
+): void {
+  let size = base;
+  ctx.font = font(size);
+  while (size > 12 && ctx.measureText(text).width > maxWidth) {
+    size -= 2;
+    ctx.font = font(size);
+  }
 }
 
 function pathBounds(d: string): { x: number; y: number; w: number; h: number } {
