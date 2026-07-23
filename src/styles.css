@@ -186,3 +186,21 @@ body {
   font-size: 12px;
   color: var(--ink-soft);
 }
+
+/* US choropleth map */
+.state-map { padding: 10px 12px 4px; }
+.state-map svg { width: 100%; height: auto; display: block; }
+.map-state {
+  fill: var(--magenta);
+  fill-opacity: 0.06;
+  stroke: var(--ink);
+  stroke-width: 0.75;
+  stroke-linejoin: round;
+  cursor: pointer;
+  transition: fill-opacity 150ms ease;
+}
+.map-state:hover { stroke-width: 1.75; }
+.map-state.complete { fill-opacity: 1; }
+.map-state.nodata { fill: var(--chart-deep); fill-opacity: 1; cursor: default; }
+.map-note { margin: 6px 2px 8px; }
+.masthead svg { align-self: center; }
