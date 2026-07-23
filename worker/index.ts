@@ -2,8 +2,9 @@ import { runExtract, currentCycleDate, isoDate, DATASET_KEY, type NasrEnv } from
 import { handleTokenExchange, handleVisitedProxy, type OAuthEnv } from "./oauth";
 import { verifyAccessJwt, type AccessEnv } from "./access";
 import { alertIfStale, emailConfigured, sendEmail, type EmailEnv } from "./email";
+import { handleEvent, track, type AnalyticsEnv } from "./analytics";
 
-export interface Env extends NasrEnv, OAuthEnv, AccessEnv, EmailEnv {
+export interface Env extends NasrEnv, OAuthEnv, AccessEnv, EmailEnv, AnalyticsEnv {
   ASSETS: Fetcher;
 }
 
@@ -15,10 +16,15 @@ export default {
       return serveAirports(env);
     }
     if (url.pathname === "/api/oauth/token") {
+      track(env, "mfb_connect", "myflightbook");
       return handleTokenExchange(request, env);
     }
     if (url.pathname === "/api/mfb/visited") {
+      track(env, "mfb_fetch", "myflightbook");
       return handleVisitedProxy(request, env);
+    }
+    if (url.pathname === "/api/event") {
+      return handleEvent(request, env);
     }
     if (url.pathname === "/api/config") {
       // Public client config for the SPA — nothing here is sensitive.
@@ -32,6 +38,11 @@ export default {
     }
 
     // Everything else: the React app (SPA fallback handled by assets config).
+    // Count SPA shell loads only (no file extension = HTML navigation), so
+    // JS/CSS/font requests don't inflate pageviews.
+    if (request.method === "GET" && !/\.[a-z0-9]+$/i.test(url.pathname)) {
+      track(env, "pageview");
+    }
     return env.ASSETS.fetch(request);
   },
 
@@ -43,7 +54,10 @@ export default {
   async scheduled(_controller: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
     ctx.waitUntil(
       runExtract(env)
-        .then((status) => console.log(`nasr extract: ${status}`))
+        .then((status) => {
+          console.log(`nasr extract: ${status}`);
+          if (status.startsWith("extracted")) track(env, "extract_run");
+        })
         .catch(async (err) => {
           console.error(`nasr extract failed: ${err}`);
           // Alert (at most once per stale cycle, after a grace period) when
