@@ -21,7 +21,7 @@ export interface AnalyticsEnv {
 }
 
 /** Events the client is allowed to report via /api/event. */
-const CLIENT_EVENTS = new Set(["csv_upload"]);
+const CLIENT_EVENTS = new Set(["csv_upload", "card_share"]);
 const SOURCES = new Set(["foreflight", "garmin", "myflightbook", ""]);
 
 /** Fire-and-forget; analytics must never affect the request path. */
