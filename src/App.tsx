@@ -1,0 +1,182 @@
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { AirportDataset, FlightVisit } from "../shared/types";
+import { parseLogbookCsv } from "./lib/csv/parsers";
+import { computeCompletion, type StateProgress } from "./lib/completion";
+import AirportRing from "./components/AirportRing";
+
+export default function App() {
+  const [dataset, setDataset] = useState<AirportDataset | null>(null);
+  const [datasetError, setDatasetError] = useState<string | null>(null);
+  const [flights, setFlights] = useState<FlightVisit[]>([]);
+  const [uploadNote, setUploadNote] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string | null>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    fetch("/api/airports")
+      .then(async (res) => {
+        if (!res.ok) {
+          const body = (await res.json().catch(() => ({}))) as { detail?: string };
+          throw new Error(body.detail ?? `Airport data unavailable (${res.status})`);
+        }
+        return res.json() as Promise<AirportDataset>;
+      })
+      .then(setDataset)
+      .catch((err: Error) => setDatasetError(err.message));
+  }, []);
+
+  const completion = useMemo(
+    () => (dataset && flights.length ? computeCompletion(dataset, flights) : null),
+    [dataset, flights],
+  );
+
+  async function onFiles(list: FileList | null) {
+    if (!list?.length) return;
+    let added = 0;
+    const sources = new Set<string>();
+    for (const file of Array.from(list)) {
+      try {
+        const { flights: parsed, source } = parseLogbookCsv(await file.text());
+        setFlights((prev) => [...prev, ...parsed]);
+        added += parsed.length;
+        sources.add(source);
+      } catch (err) {
+        setUploadNote(`${file.name}: ${(err as Error).message}`);
+        return;
+      }
+    }
+    setUploadNote(`Added ${added} flights (${[...sources].join(", ")}). Parsed in your browser — nothing was uploaded.`);
+    if (fileInput.current) fileInput.current.value = "";
+  }
+
+  const selectedState: StateProgress | undefined = completion?.states.find(
+    (s) => s.state === selected,
+  );
+
+  return (
+    <div className="app">
+      <header className="masthead">
+        <h1>
+          Plane <span className="accent">State</span>
+        </h1>
+        <span className="legend">Land them all. Complete a state.</span>
+        {dataset && <span className="cycle-tag">NASR cycle {dataset.cycle}</span>}
+      </header>
+
+      <section className="panel">
+        <h2>Logbook</h2>
+        <div className="upload-row">
+          <button className="btn primary" onClick={() => fileInput.current?.click()}>
+            Upload logbook CSV
+          </button>
+          <input
+            ref={fileInput}
+            type="file"
+            accept=".csv,text/csv"
+            multiple
+            hidden
+            onChange={(e) => onFiles(e.target.files)}
+          />
+          <button className="btn" disabled title="Coming soon — pending MyFlightBook API credentials">
+            Connect MyFlightBook
+          </button>
+          <span className="hint">ForeFlight and Garmin Pilot exports, auto-detected.</span>
+        </div>
+        {uploadNote && <p className="notice ok">{uploadNote}</p>}
+        {datasetError && <p className="notice">{datasetError}</p>}
+        {completion && (
+          <p className="hint">
+            {completion.visitedCount} of {completion.totalAirports} public-use US airports visited
+            {completion.unmatched.length > 0 &&
+              ` · ${completion.unmatched.length} idents didn't match (foreign fields, waypoints, or typos)`}
+          </p>
+        )}
+      </section>
+
+      {completion && !selectedState && (
+        <div className="state-grid">
+          {completion.states.map((sp) => (
+            <button
+              key={sp.state}
+              className={`state-tile${sp.pct === 1 ? " complete" : ""}`}
+              onClick={() => setSelected(sp.state)}
+            >
+              <span className="state-code">{sp.state}</span>
+              <AirportRing pct={sp.pct} />
+              <span className="state-count">
+                {sp.visited.length}/{sp.total}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {selectedState && (
+        <>
+          <div className="detail-head">
+            <AirportRing pct={selectedState.pct} size={72} />
+            <h2>
+              {selectedState.state} — {selectedState.visited.length} of {selectedState.total}
+            </h2>
+            <button className="btn back" onClick={() => setSelected(null)}>
+              All states
+            </button>
+          </div>
+          <div className="airport-cols">
+            <AirportList title="Visited" kind="visited" airports={selectedState.visited} />
+            <AirportList title="Still to go" kind="unvisited" airports={selectedState.unvisited} />
+          </div>
+        </>
+      )}
+
+      {!completion && !datasetError && (
+        <section className="panel">
+          <h2>Getting started</h2>
+          <p>
+            Upload a ForeFlight or Garmin Pilot logbook export to see your state-by-state airport
+            progress. Any airport appearing in a flight counts as visited. Your logbook is parsed
+            entirely in your browser.
+          </p>
+        </section>
+      )}
+
+      <footer className="footer">
+        Airport data: FAA NASR (public-use airports). Not for navigation. Your logbook never leaves
+        your browser except when you connect MyFlightBook directly.
+      </footer>
+    </div>
+  );
+}
+
+function AirportList({
+  title,
+  kind,
+  airports,
+}: {
+  title: string;
+  kind: "visited" | "unvisited";
+  airports: { faaId: string; icaoId: string; name: string; city: string }[];
+}) {
+  return (
+    <div className={`airport-list ${kind}`}>
+      <h3>
+        {title} ({airports.length})
+      </h3>
+      {airports.length === 0 ? (
+        <p className="empty">{kind === "visited" ? "None yet — go fly." : "State complete."}</p>
+      ) : (
+        <ul>
+          {airports.map((a) => (
+            <li key={a.faaId}>
+              <span className="ident">{a.icaoId || a.faaId}</span>
+              <span>
+                {a.name}
+                {a.city ? ` · ${a.city}` : ""}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}

@@ -1,0 +1,41 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "planestate",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-07-23",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "./dist/client",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application"
+  },
+  "observability": {
+    "enabled": true
+  },
+  // Daily cron, not 28-day: the handler is idempotent. Each run compares the
+  // current AIRAC cycle against what's stored in R2 and only fetches when a new
+  // cycle is effective. A failed fetch therefore retries automatically the next
+  // day — this is our answer to cron triggers having no built-in retry.
+  "triggers": {
+    "crons": ["17 6 * * *"]
+  },
+  "r2_buckets": [
+    {
+      // Rename bucket_name to match the placeholder bucket you created.
+      "binding": "AIRPORT_DATA",
+      "bucket_name": "planestate-data"
+    }
+  ],
+  "vars": {
+    // MyFlightBook OAuth (public values only — the client SECRET is set via:
+    //   wrangler secret put MFB_CLIENT_SECRET
+    "MFB_CLIENT_ID": "TODO",
+    "MFB_OAUTH_BASE": "https://myflightbook.com/logbook/mvc/oauth",
+    // FAA NASR segmented-CSV download base. Verify pattern on first run.
+    "NASR_BASE_URL": "https://nfdc.faa.gov/webContent/28DaySub/extra"
+  }
+  // ROADMAP (not yet configured):
+  // - send_email binding (Email Routing) for staleness alerts
+  // - Cloudflare Access policy protecting /api/admin/* (configure in dashboard;
+  //   the route already verifies the Cf-Access-Jwt-Assertion header exists)
+}
