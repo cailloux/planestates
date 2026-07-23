@@ -35,8 +35,8 @@
     // Cloudflare Access protection for /api/admin/* — from the Zero Trust
     // dashboard after creating the Access application. Admin fails closed
     // until both are set.
-    "ACCESS_TEAM_DOMAIN": "TODO.cloudflareaccess.com",
-    "ACCESS_AUD": "TODO"
+    "ACCESS_TEAM_DOMAIN": "cailloux.cloudflareaccess.com",
+    "ACCESS_AUD": "e955a1450923b2a5fa861c526fd60c2404b232de720c036e6df7a3c8769db135"
   }
   // ROADMAP (not yet configured):
   // - send_email binding (Email Routing) for staleness alerts
