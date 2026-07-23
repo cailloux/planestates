@@ -1,8 +1,9 @@
 import { runExtract, currentCycleDate, isoDate, DATASET_KEY, type NasrEnv } from "./nasr";
 import { handleTokenExchange, handleVisitedProxy, type OAuthEnv } from "./oauth";
 import { verifyAccessJwt, type AccessEnv } from "./access";
+import { alertIfStale, emailConfigured, sendEmail, type EmailEnv } from "./email";
 
-export interface Env extends NasrEnv, OAuthEnv, AccessEnv {
+export interface Env extends NasrEnv, OAuthEnv, AccessEnv, EmailEnv {
   ASSETS: Fetcher;
 }
 
@@ -43,11 +44,17 @@ export default {
     ctx.waitUntil(
       runExtract(env)
         .then((status) => console.log(`nasr extract: ${status}`))
-        .catch((err) => {
-          // ROADMAP: staleness alerting. When the stored cycle lags the current
-          // cycle beyond a grace period, send email via the Email Routing
-          // send_email binding. For now failures land in Workers Logs.
+        .catch(async (err) => {
           console.error(`nasr extract failed: ${err}`);
+          // Alert (at most once per stale cycle, after a grace period) when
+          // retries alone aren't fixing it — see worker/email.ts.
+          try {
+            const cycle = currentCycleDate();
+            const head = await env.AIRPORT_DATA.head(DATASET_KEY);
+            await alertIfStale(env, env.AIRPORT_DATA, isoDate(cycle), cycle, head?.customMetadata?.cycle ?? null, String(err));
+          } catch (alertErr) {
+            console.error(`staleness alert failed: ${alertErr}`);
+          }
         }),
     );
   },
@@ -91,6 +98,14 @@ async function handleAdmin(request: Request, env: Env, url: URL): Promise<Respon
   if (url.pathname === "/api/admin/extract" && request.method === "POST") {
     const status = await runExtract(env, /* force */ true);
     return json({ ok: true, status });
+  }
+
+  if (url.pathname === "/api/admin/test-email" && request.method === "POST") {
+    if (!emailConfigured(env)) {
+      return json({ ok: false, detail: "Email not configured (EMAIL binding / ALERT_FROM / ALERT_TO)" }, 503);
+    }
+    await sendEmail(env, "Plane States: test alert", "The send_email binding works. Staleness alerts will arrive like this.");
+    return json({ ok: true, status: `test email sent to ${env.ALERT_TO}` });
   }
 
   if (url.pathname === "/api/admin/status") {

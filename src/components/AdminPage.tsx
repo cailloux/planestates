@@ -77,6 +77,20 @@ export default function AdminPage() {
         <button className="btn" onClick={load} disabled={busy}>
           Refresh status
         </button>
+        <button
+          className="btn"
+          disabled={busy}
+          onClick={async () => {
+            setError(null);
+            setResult(null);
+            const res = await fetch("/api/admin/test-email", { method: "POST" });
+            const body = (await res.json().catch(() => ({}))) as { status?: string; detail?: string };
+            if (res.ok) setResult(body.status ?? "sent");
+            else setError(body.detail ?? `Test email failed (${res.status})`);
+          }}
+        >
+          Send test email
+        </button>
         <a className="hint" href="/">
           ← back to app
         </a>
