@@ -1,7 +1,7 @@
 /**
  * MyFlightBook OAuth2 token exchange.
  *
- * This is the only reason Plane State has a backend at all: the authorization-
+ * This is the only reason Plane States has a backend at all: the authorization-
  * code exchange requires the client secret, which must not ship in browser JS.
  * The Worker exchanges the code and hands the access token straight back to
  * the browser. Nothing is stored server-side — the token lives only in the

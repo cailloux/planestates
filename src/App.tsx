@@ -57,7 +57,7 @@ export default function App() {
     <div className="app">
       <header className="masthead">
         <h1>
-          Plane <span className="accent">State</span>
+          Plane <span className="accent">States</span>
         </h1>
         <span className="legend">Land them all. Complete a state.</span>
         {dataset && <span className="cycle-tag">NASR cycle {dataset.cycle}</span>}

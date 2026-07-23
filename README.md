@@ -1,8 +1,8 @@
-# Plane State
+# Plane States
 
 Land them all. Complete a state.
 
-Plane State shows pilots a state-by-state list of visited and unvisited
+Plane States shows pilots a state-by-state list of visited and unvisited
 public-use US airports, built from their logbook. Any airport appearing in a
 logged flight counts as visited.
 

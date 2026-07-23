@@ -23,7 +23,7 @@ export interface AirportDataset {
   airports: Airport[];
 }
 
-/** A flight reduced to the only things Plane State cares about. */
+/** A flight reduced to the only things Plane States cares about. */
 export interface FlightVisit {
   /** ISO date of the flight (best effort from the source). */
   date: string;
