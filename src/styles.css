@@ -204,3 +204,8 @@ body {
 .map-state.nodata { fill: var(--chart-deep); fill-opacity: 1; cursor: default; }
 .map-note { margin: 6px 2px 8px; }
 .masthead svg { align-self: center; }
+
+/* Footer credit */
+.footer .credit { display: block; margin-top: 6px; }
+.footer .credit a { color: var(--magenta); text-decoration: none; }
+.footer .credit a:hover { text-decoration: underline; }

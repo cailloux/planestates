@@ -233,6 +233,12 @@ function MainApp() {
       <footer className="footer">
         Airport data: FAA NASR (public-use airports). Not for navigation. Your logbook never leaves
         your browser except when you connect MyFlightBook directly.
+        <span className="credit">
+          🛩️ Built by{" "}
+          <a href="https://atlantacfi.co" target="_blank" rel="noopener">
+            Tim Cailloux
+          </a>
+        </span>
       </footer>
     </div>
   );
