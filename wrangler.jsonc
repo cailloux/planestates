@@ -27,6 +27,12 @@
       "remote": true
     }
   ],
+  "analytics_engine_datasets": [
+    {
+      "binding": "ANALYTICS",
+      "dataset": "planestates_events"
+    }
+  ],
   "r2_buckets": [
     {
       // Rename bucket_name to match the placeholder bucket you created.

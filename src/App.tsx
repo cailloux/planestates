@@ -102,6 +102,10 @@ function MainApp() {
       }
     }
     setUploadNote(`Added ${added} flights (${[...sources].join(", ")}). Parsed in your browser — nothing was uploaded.`);
+    // Count the event, never the content: no filenames, counts, or airports.
+    for (const source of sources) {
+      navigator.sendBeacon?.("/api/event", JSON.stringify({ type: "csv_upload", source }));
+    }
     if (fileInput.current) fileInput.current.value = "";
   }
 
