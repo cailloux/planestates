@@ -5,6 +5,16 @@ updates:
     schedule:
       interval: "weekly"
     groups:
+      # React ecosystem must move in lockstep (react-dom peer-requires react,
+      # plugin-react tracks vite majors) — individual major PRs are unbuildable.
+      react-family:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "@types/react"
+          - "@types/react-dom"
+          - "@vitejs/plugin-react"
+          - "vite"
       minor-and-patch:
         update-types: ["minor", "patch"]
 
