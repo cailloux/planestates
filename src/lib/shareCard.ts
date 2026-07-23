@@ -72,7 +72,7 @@ export async function renderShareCard(sp: StateProgress): Promise<Blob> {
 
   // Pixel compass + wordmark, bottom
   const px = 7;
-  const ox = 560, oy = 495;
+  const ox = 560, oy = 478;
   for (const [x, y] of INK) { ctx.fillStyle = INK_C; ctx.fillRect(ox + x * px, oy + y * px, px, px); }
   for (const [x, y] of NEEDLE) { ctx.fillStyle = MAGENTA; ctx.fillRect(ox + x * px, oy + y * px, px, px); }
   ctx.fillStyle = SOFT;
