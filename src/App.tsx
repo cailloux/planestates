@@ -5,6 +5,8 @@ import { computeCompletion, type StateProgress } from "./lib/completion";
 import { beginAuth, clearToken, fetchVisitedAirports, getStoredToken } from "./lib/myflightbook";
 import AirportRing from "./components/AirportRing";
 import AdminPage from "./components/AdminPage";
+import PixelCompass from "./components/PixelCompass";
+import StateMap from "./components/StateMap";
 import OAuthCallback from "./components/OAuthCallback";
 
 export default function App() {
@@ -116,6 +118,7 @@ function MainApp() {
   return (
     <div className="app">
       <header className="masthead">
+        <PixelCompass size={30} />
         <h1>
           Plane <span className="accent">States</span>
         </h1>
@@ -159,6 +162,8 @@ function MainApp() {
           </p>
         )}
       </section>
+
+      {completion && !selectedState && <StateMap states={completion.states} onSelect={setSelected} />}
 
       {completion && !selectedState && (
         <div className="state-grid">
