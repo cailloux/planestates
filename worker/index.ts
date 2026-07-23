@@ -3,6 +3,7 @@ import { handleTokenExchange, handleVisitedProxy, type OAuthEnv } from "./oauth"
 import { verifyAccessJwt, type AccessEnv } from "./access";
 import { alertIfStale, emailConfigured, sendEmail, type EmailEnv } from "./email";
 import { handleEvent, track, type AnalyticsEnv } from "./analytics";
+import { handleShare } from "./share";
 
 export interface Env extends NasrEnv, OAuthEnv, AccessEnv, EmailEnv, AnalyticsEnv {
   ASSETS: Fetcher;
@@ -22,6 +23,10 @@ export default {
     if (url.pathname === "/api/mfb/visited") {
       track(env, "mfb_fetch", "myflightbook");
       return handleVisitedProxy(request, env);
+    }
+    if (url.pathname.startsWith("/share/")) {
+      track(env, "share_view");
+      return handleShare(url);
     }
     if (url.pathname === "/api/event") {
       return handleEvent(request, env);

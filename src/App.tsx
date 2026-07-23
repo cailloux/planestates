@@ -3,6 +3,7 @@ import type { AirportDataset, FlightVisit } from "../shared/types";
 import { parseLogbookCsv } from "./lib/csv/parsers";
 import { computeCompletion, type StateProgress } from "./lib/completion";
 import { beginAuth, clearToken, fetchVisitedAirports, getStoredToken } from "./lib/myflightbook";
+import { shareCard, shareUrl } from "./lib/shareCard";
 import AirportRing from "./components/AirportRing";
 import AdminPage from "./components/AdminPage";
 import PixelCompass from "./components/PixelCompass";
@@ -190,6 +191,23 @@ function MainApp() {
             <h2>
               {selectedState.state} — {selectedState.visited.length} of {selectedState.total}
             </h2>
+            <button
+              className="btn"
+              onClick={async () => {
+                try {
+                  const how = await shareCard(selectedState);
+                  if (how === "downloaded") {
+                    await navigator.clipboard?.writeText(shareUrl(selectedState));
+                    setMfbNote("Card downloaded — share link copied to clipboard.");
+                  }
+                  navigator.sendBeacon?.("/api/event", JSON.stringify({ type: "card_share", source: "" }));
+                } catch {
+                  /* user cancelled the share sheet */
+                }
+              }}
+            >
+              Share card
+            </button>
             <button className="btn back" onClick={() => setSelected(null)}>
               All states
             </button>

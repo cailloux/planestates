@@ -6,7 +6,7 @@
  */
 
 // Ink pixels: [x, y]
-const INK: [number, number][] = [
+export const INK: [number, number][] = [
   // N arm
   [7, 0], [6, 1], [7, 1], [8, 1], [7, 2], [7, 3],
   // S arm
@@ -29,7 +29,7 @@ const INK: [number, number][] = [
 ];
 
 // Magenta needle (points north)
-const NEEDLE: [number, number][] = [
+export const NEEDLE: [number, number][] = [
   [7, 5], [6, 6], [7, 6], [8, 6], [7, 7], [7, 8],
 ];
 
