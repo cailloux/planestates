@@ -29,7 +29,7 @@
   "vars": {
     // MyFlightBook OAuth (public values only — the client SECRET is set via:
     //   wrangler secret put MFB_CLIENT_SECRET
-    "MFB_CLIENT_ID": "TODO",
+    "MFB_CLIENT_ID": "planestates",
     "MFB_OAUTH_BASE": "https://myflightbook.com/logbook/mvc/oauth",
     // FAA NASR segmented-CSV download base. Verify pattern on first run.
     "NASR_BASE_URL": "https://nfdc.faa.gov/webContent/28DaySub/extra"
